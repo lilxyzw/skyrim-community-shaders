@@ -4,6 +4,7 @@
 #include "Common/Random.hlsli"
 #include "Common/SharedData.hlsli"
 #include "Common/VR.hlsli"
+#include "lil.hlsl"
 
 struct VS_INPUT
 {
@@ -230,7 +231,7 @@ PS_OUTPUT main(PS_INPUT input)
 	}
 #			endif
 
-	float3 diffuseColor = SharedData::DirLightColor.xyz * dirShadow * 0.5;
+	float3 diffuseColor = lil_DirLightModify(SharedData::DirLightColor.xyz) * dirShadow * 0.5;
 
 	float3 ddx = ddx_coarse(input.WorldPosition.xyz);
 	float3 ddy = ddy_coarse(input.WorldPosition.xyz);
@@ -252,7 +253,7 @@ PS_OUTPUT main(PS_INPUT input)
 	psout.Albedo = float4(baseColor.xyz, 1);
 	psout.Masks = float4(0, 0, 1, 0);
 #		else
-	float3 diffuseColor = SharedData::DirLightColor.xyz * 0.5;
+	float3 diffuseColor = lil_DirLightModify(SharedData::DirLightColor.xyz) * 0.5;
 
 	float3 ddx = ddx_coarse(input.WorldPosition.xyz);
 	float3 ddy = ddy_coarse(input.WorldPosition.xyz);

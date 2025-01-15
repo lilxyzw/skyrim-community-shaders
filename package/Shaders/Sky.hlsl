@@ -1,5 +1,6 @@
 #include "Common/FrameBuffer.hlsli"
 #include "Common/VR.hlsli"
+#include "lil.hlsl"
 
 struct VS_INPUT
 {
@@ -248,6 +249,8 @@ PS_OUTPUT main(PS_INPUT input)
 #	if defined(CLOUD_SHADOWS) && defined(CLOUDS) && !defined(DEFERRED)
 	psout.CloudShadows = psout.Color;
 #	endif
+
+	psout.Color.rgb *= lil_p_SkyBoost;
 
 	return psout;
 }

@@ -8,6 +8,7 @@
 #include "Common/Random.hlsli"
 #include "Common/SharedData.hlsli"
 #include "Common/Skinned.hlsli"
+#include "lil.hlsl"
 
 #if defined(FACEGEN) || defined(FACEGEN_RGB_TINT)
 #	define SKIN
@@ -1851,7 +1852,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	waterRoughnessSpecular = 1.0 - wetnessGlossinessSpecular;
 #	endif
 
-	float3 dirLightColor = DirLightColor.xyz;
+	float3 dirLightColor = lil_DirLightModify(DirLightColor.xyz);
 	float3 dirLightColorMultiplier = 1;
 
 #	if defined(WATER_EFFECTS)
@@ -1916,10 +1917,14 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #		if defined(DEFERRED)
 		bool useScreenSpaceShadows = true;
 #		else
-		bool useScreenSpaceShadows = Permutation::ExtraShaderDescriptor & Permutation::ExtraFlags::IsDecal;
+		bool useScreenSpaceShadows =
+			#if !defined(EYE)
+			Permutation::ExtraShaderDescriptor &
+			#endif
+			Permutation::ExtraFlags::IsDecal;
 #		endif
 
-#		if defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)
+#		if (defined(SOFT_LIGHTING) || defined(BACK_LIGHTING) || defined(RIM_LIGHTING)) && !defined(EYE)
 		useScreenSpaceShadows = useScreenSpaceShadows && (dirLightAngle > 0.0);
 #		endif
 
@@ -1996,7 +2001,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #	else
 	dirDetailShadow *= parallaxShadow;
-	dirLightColor *= dirLightColorMultiplier;
+	dirLightColor *= dirLightColorMultiplier * dirDetailShadow;
 	float3 dirDiffuseColor = dirLightColor * saturate(dirLightAngle) * dirDetailShadow;
 
 #		if defined(SOFT_LIGHTING) || defined(RIM_LIGHTING) || defined(BACK_LIGHTING)
@@ -2249,8 +2254,11 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	}
 #		endif
 #	endif
+#	if defined(EYE)
+	lightsSpecularColor *= lil_p_EyeSpecular;
+#	endif
 
-	diffuseColor += lightsDiffuseColor;
+	diffuseColor += lightsDiffuseColor + lil_p_NonDirectionalLight;
 	specularColor += lightsSpecularColor;
 
 #	if !defined(LANDSCAPE)
@@ -2261,6 +2269,12 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 		charLightColor = Color::GammaToLinear(charLightColor).x / Color::LightPreMult;
 #		endif
 		diffuseColor += (charLightMul * charLightColor).xxx;
+		float3 lil_NormalizedDiffuse = dot(diffuseColor,diffuseColor) < 0.000001 ? 0.333333 : normalize(diffuseColor);
+		float lil_CharacterLight = saturate(dot(worldSpaceViewDirection, worldSpaceNormal.xyz));
+		diffuseColor += lil_CharacterLight * CharacterLightParams.x * lil_p_CharacterLight * lil_NormalizedDiffuse;
+#		if defined(EYE)
+		specularColor += pow(lil_CharacterLight, 500) * CharacterLightParams.x * lil_p_CharacterEyeLight * lil_p_EyeSpecular * lil_NormalizedDiffuse;
+#		endif
 	}
 #	endif
 
@@ -2401,7 +2415,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 #	endif
 
 #	if defined(HAIR)
-	float3 vertexColor = lerp(1, TintColor.xyz, input.Color.y);
+	float3 vertexColor = lerp(1, TintColor.xyz, input.Color.y) * lil_p_HairIntensity;
 #	else
 	float3 vertexColor = input.Color.xyz;
 #	endif  // defined (HAIR)

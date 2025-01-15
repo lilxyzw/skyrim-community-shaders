@@ -892,6 +892,7 @@ PS_OUTPUT main(PS_INPUT input)
 		}
 	}
 	specularColor += specularLighting * 3;
+	specularColor *= 1-rcp(specularColor*3+1);
 #				endif
 
 #				if defined(UNDERWATER)

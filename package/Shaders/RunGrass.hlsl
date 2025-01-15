@@ -5,6 +5,7 @@
 #include "Common/MotionBlur.hlsli"
 #include "Common/Random.hlsli"
 #include "Common/SharedData.hlsli"
+#include "lil.hlsl"
 
 #ifdef GRASS_LIGHTING
 #	define GRASS
@@ -146,27 +147,28 @@ float4 GetMSPosition(VS_INPUT input, float windTimer)
 	float windTmp3 = 0.2 * cos(Math::PI * windAngleCos);
 	float windTmp1 = sin(Math::PI * windAngleSin);
 	float windTmp2 = sin(Math::TAU * windAngleSin);
-	float windPower = WindVector.z * (((windTmp1 + windTmp2) * 0.3 + windTmp3) *
+	float windPower = WindVector.z * (((windTmp1 + windTmp2) * 0.3 + windTmp3 + 0.5) *
 										 (0.5 * (input.Color.w * input.Color.w)));
 
 	float3 inputPosition = input.Position.xyz * (input.InstanceData4.yyy * ScaleMask.xyz + float3(1, 1, 1));
 	float3 windVector = float3(WindVector.xy, 0);
 
 #	ifdef GRASS_LIGHTING
-	float3 InstanceData4 = mul(world3x3, inputPosition);
-	float4 msPosition;
-	msPosition.xyz = input.InstanceData1.xyz + (windVector * windPower + InstanceData4);
+	float3 instancePosition = mul(world3x3, inputPosition);
 #	else
 	float3 instancePosition;
 	instancePosition.z = dot(
 		float3(input.InstanceData4.x, input.InstanceData2.w, input.InstanceData3.w), inputPosition);
 	instancePosition.x = dot(input.InstanceData2.xyz, inputPosition);
 	instancePosition.y = dot(input.InstanceData3.xyz, inputPosition);
+#	endif
 
 	float4 msPosition;
-	msPosition.xyz = input.InstanceData1.xyz + (windVector * windPower + instancePosition);
-#	endif
+	msPosition.xyz = input.InstanceData1.xyz + instancePosition;
 	msPosition.w = 1;
+
+	float depth = mul(WorldViewProj[0], msPosition).z * 0.001 + 1;
+	msPosition.xyz += windVector * (windPower * depth);
 
 	return msPosition;
 }
@@ -530,7 +532,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 	float3 transmissionColor = 0;
 #			endif  // TRUE_PBR
 
-	float3 dirLightColor = SharedData::DirLightColor.xyz;
+	float3 dirLightColor = lil_DirLightModify(SharedData::DirLightColor.xyz);
 	float3 dirLightColorMultiplier = 1;
 
 	float dirLightAngle = dot(normal, SharedData::DirLightDirection.xyz);
@@ -576,7 +578,7 @@ PS_OUTPUT main(PS_INPUT input, bool frontFace
 
 #			if defined(TRUE_PBR)
 	{
-		PBR::LightProperties lightProperties = PBR::InitLightProperties(SharedData::DirLightColor.xyz, dirLightColorMultiplier * dirShadow, 1);
+		PBR::LightProperties lightProperties = PBR::InitLightProperties(lil_DirLightModify(SharedData::DirLightColor.xyz), dirLightColorMultiplier * dirShadow, 1);
 		float3 dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor;
 		PBR::GetDirectLightInput(dirDiffuseColor, coatDirDiffuseColor, dirTransmissionColor, dirSpecularColor, normal, normal, viewDirection, viewDirection, DirLightDirection, DirLightDirection, lightProperties, pbrSurfaceProperties, tbn, input.TexCoord.xy);
 		lightsDiffuseColor += dirDiffuseColor;
@@ -799,7 +801,7 @@ PS_OUTPUT main(PS_INPUT input)
 #			endif
 	}
 
-	float3 diffuseColor = SharedData::DirLightColor.xyz * dirShadow * lerp(dirDetailShadow, 1.0, 0.5) * 0.5;
+	float3 diffuseColor = lil_DirLightModify(SharedData::DirLightColor.xyz) * dirShadow * lerp(dirDetailShadow, 1.0, 0.5) * 0.5;
 
 #			if defined(LIGHT_LIMIT_FIX)
 	uint clusterIndex = 0;

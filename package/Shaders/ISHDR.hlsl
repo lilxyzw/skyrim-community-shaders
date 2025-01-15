@@ -1,6 +1,8 @@
 #include "Common/Color.hlsli"
 #include "Common/DummyVSTexCoord.hlsl"
 #include "Common/FrameBuffer.hlsli"
+#include "Common/SharedData.hlsli"
+#include "lil.hlsl"
 
 typedef VS_OUTPUT PS_INPUT;
 
@@ -142,6 +144,15 @@ PS_OUTPUT main(PS_INPUT input)
 	srgbColor = FrameBuffer::ToSRGBColor(srgbColor);
 
 	psout.Color = float4(srgbColor, 1.0);
+
+	float avg = AvgTex.Sample(AvgSampler, float2(0.5,0.5)).x;
+	psout.Color.rgb = lil_PostProcess(
+		BlendTex.Sample(BlendSampler, uv).rgb,
+		input.TexCoord.xy,
+		lil_BloomBlur(ImageTex, ImageSampler, Flags.x > 0.5 ? uv : input.TexCoord.xy, avg).rgb,
+		avg,
+		SharedData::InInterior
+	);
 
 #	endif
 

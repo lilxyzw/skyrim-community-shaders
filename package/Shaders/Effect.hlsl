@@ -8,6 +8,7 @@
 #include "Common/SharedData.hlsli"
 #include "Common/Skinned.hlsli"
 #include "Common/VR.hlsli"
+#include "lil.hlsl"
 
 #define EFFECT
 
@@ -525,7 +526,7 @@ float3 GetLightingColor(float3 msPosition, float3 worldPosition, float4 screenPo
 	float3 color = DLightColor.xyz;
 
 	if ((Permutation::ExtraShaderDescriptor & Permutation::ExtraFlags::EffectShadows) && !SharedData::InMapMenu && !SharedData::InInterior) {
-		float3 dirLightColor = SharedData::DirLightColor * 0.5;
+		float3 dirLightColor = lil_DirLightModify(SharedData::DirLightColor) * 0.5;
 		float3 ambientColor = mul(SharedData::DirectionalAmbient, float4(0, 0, 1, 1));
 
 		color = ambientColor;
@@ -736,6 +737,9 @@ PS_OUTPUT main(PS_INPUT input)
 	finalColor.xyz *= alpha;
 #	else
 	finalColor *= fogMul;
+#	endif
+#	if defined(SOFT) && !defined(MEMBRANE) && !defined(ADDBLEND) && !defined(MULTBLEND) && !defined(MULTBLEND_DECAL)
+	finalColor.xyz *= lil_p_FogBoost;
 #	endif
 	psout.Diffuse = finalColor;
 #	if defined(LIGHTING) && defined(LIGHT_LIMIT_FIX) && defined(LLFDEBUG)

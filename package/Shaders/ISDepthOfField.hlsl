@@ -1,5 +1,6 @@
 #include "Common/DummyVSTexCoord.hlsl"
 #include "Common/FrameBuffer.hlsli"
+#include "lil.hlsl"
 
 typedef VS_OUTPUT PS_INPUT;
 
@@ -141,6 +142,7 @@ PS_OUTPUT main(PS_INPUT input)
 #	endif
 
 	psout.Color = float4(finalColor, 1);
+	psout.Color.rgb = lil_DOFBlur(ImageTex, ImageSampler, BlurredTex, BlurredSampler, DepthTex, DepthSampler, adjustedTexCoord).xyz;
 
 	return psout;
 }
