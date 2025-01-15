@@ -1,3 +1,7 @@
+# THIS PROJECT IS NOT OFFICIAL!!!
+
+This is an unofficial modified version. Be sure to check (README_Unofficial.md)[https://github.com/lilxyzw/skyrim-community-shaders/blob/dev/README_Unofficial.md].
+
 # Skyrim Community Shaders
 
 SKSE core plugin for community-driven advanced graphics modifications.
