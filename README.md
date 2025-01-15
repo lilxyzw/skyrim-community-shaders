@@ -1,6 +1,6 @@
 # THIS PROJECT IS NOT OFFICIAL!!!
 
-This is an unofficial modified version. Be sure to check (README_Unofficial.md)[https://github.com/lilxyzw/skyrim-community-shaders/blob/dev/README_Unofficial.md].
+This is an unofficial modified version. Be sure to check [README_Unofficial.md](https://github.com/lilxyzw/skyrim-community-shaders/blob/dev/README_Unofficial.md).
 
 # Skyrim Community Shaders
 
