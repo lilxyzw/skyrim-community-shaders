@@ -6,6 +6,8 @@ project(
 	LANGUAGES CXX
 )
 
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 # ########################################################################################################################
